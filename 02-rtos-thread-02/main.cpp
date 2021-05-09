@@ -4,19 +4,26 @@
  */
 
 #include "mbed.h"
+#include "rtos.h"
 
+Thread thread(osPriorityNormal, 1024);
 
-// Blinking rate in milliseconds
-#define BLINKING_RATE     500ms
+DigitalOut led1(LED1);
 
+#define STOP_FLAG 1
 
-int main()
-{
-    // Initialise the digital pin LED1 as an output
-    DigitalOut led(LED1);
+void blink() {
+  bool threadStatus = false;
+  while (!threadStatus) {
+    threadStatus = ThisThread::flags_wait_any_for(STOP_FLAG, 100ms);
+    led1 = !led1;
+  }
+}
 
-    while (true) {
-        led = !led;
-        ThisThread::sleep_for(BLINKING_RATE);
-    }
+int main() {
+    thread.start(blink);
+    ThisThread::sleep_for(5000ms);
+    thread.flags_set(STOP_FLAG);
+    thread.join();
+    led1 = true;
 }
